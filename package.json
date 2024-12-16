@@ -8,15 +8,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/RafaeldelRio/daweb.git"
+    "url": "git+https://github.com/JoseRamonValladaresGonzalez/UD4.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/RafaeldelRio/daweb/issues"
+    "url": "https://github.com/JoseRamonValladaresGonzalez/UD4/issues"
   },
-  "homepage": "https://github.com/RafaeldelRio/daweb#readme",
+  "homepage": "https://github.com/JoseRamonValladaresGonzalez/UD4#readme",
   "dependencies": {
     "express": "^4.21.2"
   }
