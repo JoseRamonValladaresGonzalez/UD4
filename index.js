@@ -1,22 +1,39 @@
-/**
- * Tres formas de almacenar valores en memoria en javascript:
- *      let: se puede modificar
- *      var: se puede modificar
- *      const: es constante y no se puede modificar
- */
 
-// Importamos las bibliotecas necesarias.
 // Concretamente el framework express.
 const express = require("express");
 
+const { MongoClient, ServerApiVersion } = require('mongodb');
 // Inicializamos la aplicación
 const app = express();
+const uri = "mongodb+srv://jvalgon2207:1gUHuKqKeMuAtpCp@cluster0.on77w.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
 // Indicamos que la aplicación puede recibir JSON (API Rest)
 app.use(express.json());
 
 // Indicamos el puerto en el que vamos a desplegar la aplicación
 const port = process.env.PORT || 8080;
+
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  }
+});
+
+async function run() {
+  try {
+    // Connect the client to the server	(optional starting in v4.7)
+    await client.connect();
+    // Send a ping to confirm a successful connection
+    await client.db("admin").command({ ping: 1 });
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+  } finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+  }
+}
+run().catch(console.dir);
 
 // Arrancamos la aplicación
 app.listen(port, () => {
