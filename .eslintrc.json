@@ -10,7 +10,8 @@
     "sourceType": "module"
   },
   "globals": {
-    "process": "readonly"
+    "process": "readonly",
+    "ObjectId": "readonly"
   },
   "rules": {
     "indent": ["error", 2],

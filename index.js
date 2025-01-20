@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 
 // Concretamente el framework express.
 const express = require("express");
@@ -11,196 +12,61 @@ const uri = "mongodb+srv://jvalgon2207:1gUHuKqKeMuAtpCp@cluster0.on77w.mongodb.n
 app.use(express.json());
 
 // Indicamos el puerto en el que vamos a desplegar la aplicación
+// eslint-disable-next-line no-undef
 const port = process.env.PORT || 8080;
 
+// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
 });
-
-async function run() {
-  try {
-    // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
-  }
-}
-run().catch(console.dir);
+let db;
 
 // Arrancamos la aplicación
-app.listen(port, () => {
+app.listen(port, async () => {
+  await client.connect();
+  db = await client.db("Cluster0");
+
   console.log(`Servidor desplegado en puerto: ${port}`);
 });
 
-// Definimos una estructura de datos para concesionarios y coches
-let concesionarios = [
-  {
-    id: 1,
-    nombre: "Concesionario A",
-    direccion: "Calle Falsa 123",
-    coches: [
-      { id: 1, modelo: "Clio", cv: 75, precio: 10000 },
-      { id: 2, modelo: "Skyline R34", cv: 280, precio: 25000 },
-    ],
-  },
-  {
-    id: 2,
-    nombre: "Concesionario B",
-    direccion: "Avenida Siempre Viva 456",
-    coches: [
-      { id: 3, modelo: "Fiesta", cv: 90, precio: 15000 },
-      { id: 4, modelo: "Focus", cv: 120, precio: 18000 },
-    ],
-  },
-];
+// Lista todos los coches
+app.get("/coches", async (request, response) => {
+  const coches = await db.collection("coches").find({}).toArray();
 
-// Endpoints de la API
-
-// 1. Obtener todos los concesionarios
-app.get("/concesionarios", (request, response) => {
-  response.json(concesionarios);
+  response.json(coches);
 });
 
-// 2. Crear un nuevo concesionario
-app.post("/concesionarios", (request, response) => {
-  const { nombre, direccion } = request.body;
-  const nuevoConcesionario = {
-    id: concesionarios.length + 1,
-    nombre,
-    direccion,
-    coches: [],
-  };
-  concesionarios.push(nuevoConcesionario);
-  response.status(201).json(nuevoConcesionario);
+// Añadir un nuevo coche
+app.post("/coches", async (request, response) => {
+  await db.collection("coches").insertOne(request.body);
+
+  response.json({ message: "ok" });
 });
 
-// 3. Obtener un concesionario por ID
-app.get("/concesionarios/:id", (request, response) => {
-  const id = parseInt(request.params.id);
-  const concesionario = concesionarios.find((c) => c.id === id);
-  if (concesionario) {
-    response.json(concesionario);
-  } else {
-    response.status(404).json({ message: "Concesionario no encontrado" });
-  }
+// Obtener un solo coche
+app.get("/coches/:id", async (request, response) => {
+  const id = new ObjectId(request.params.id);
+  const coche = await db.collection("coches").find({ _id: id }).toArray();
+
+  response.json({ coche });
 });
 
-// 4. Actualizar un concesionario por ID
-app.put("/concesionarios/:id", (request, response) => {
-  const id = parseInt(request.params.id);
-  const { nombre, direccion } = request.body;
-  const concesionario = concesionarios.find((c) => c.id === id);
-  if (concesionario) {
-    concesionario.nombre = nombre;
-    concesionario.direccion = direccion;
-    response.json(concesionario);
-  } else {
-    response.status(404).json({ message: "Concesionario no encontrado" });
-  }
+// Actualizar un solo coche
+app.put("/coches/:id", async (request, response) => {
+  const id = new ObjectId(request.params.id);
+  await db.collection("coches").updateOne({ _id: id }, { $set: request.body });
+
+  response.json({ message: "ok" });
 });
 
-// 5. Borrar un concesionario por ID
-app.delete("/concesionarios/:id", (request, response) => {
-  const id = parseInt(request.params.id);
-  const index = concesionarios.findIndex((c) => c.id === id);
-  if (index !== -1) {
-    concesionarios.splice(index, 1);
-    response.status(204).json();
-  } else {
-    response.status(404).json({ message: "Concesionario no encontrado" });
-  }
-});
+// Borrar un elemento del array
+app.delete("/coches/:id", async (request, response) => {
+  const id = new ObjectId(request.params.id);
+  await db.collection("coches").deleteOne({ _id: id });
 
-// 6. Obtener todos los coches de un concesionario
-app.get("/concesionarios/:id/coches", (request, response) => {
-  const id = parseInt(request.params.id);
-  const concesionario = concesionarios.find((c) => c.id === id);
-  if (concesionario) {
-    response.json(concesionario.coches);
-  } else {
-    response.status(404).json({ message: "Concesionario no encontrado" });
-  }
-});
-
-// 7. Añadir un coche a un concesionario
-app.post("/concesionarios/:id/coches", (request, response) => {
-  const id = parseInt(request.params.id);
-  const { modelo, cv, precio } = request.body;
-  const concesionario = concesionarios.find((c) => c.id === id);
-  if (concesionario) {
-    const nuevoCoche = {
-      id: concesionario.coches.length + 1,
-      modelo,
-      cv,
-      precio,
-    };
-    concesionario.coches.push(nuevoCoche);
-    response.status(201).json(nuevoCoche);
-  } else {
-    response.status(404).json({ message: "Concesionario no encontrado" });
-  }
-});
-
-// 8. Obtener un coche específico de un concesionario
-app.get("/concesionarios/:id/coches/:cocheId", (request, response) => {
-  const id = parseInt(request.params.id);
-  const cocheId = parseInt(request.params.cocheId);
-  const concesionario = concesionarios.find((c) => c.id === id);
-  if (concesionario) {
-    const coche = concesionario.coches.find((c) => c.id === cocheId);
-    if (coche) {
-      response.json(coche);
-    } else {
-      response.status(404).json({ message: "Coche no encontrado" });
-    }
-  } else {
-    response.status(404).json({ message: "Concesionario no encontrado" });
-  }
-});
-
-// 9. Actualizar un coche de un concesionario
-app.put("/concesionarios/:id/coches/:cocheId", (request, response) => {
-  const id = parseInt(request.params.id);
-  const cocheId = parseInt(request.params.cocheId);
-  const { modelo, cv, precio } = request.body;
-  const concesionario = concesionarios.find((c) => c.id === id);
-  if (concesionario) {
-    const coche = concesionario.coches.find((c) => c.id === cocheId);
-    if (coche) {
-      coche.modelo = modelo;
-      coche.cv = cv;
-      coche.precio = precio;
-      response.json(coche);
-    } else {
-      response.status(404).json({ message: "Coche no encontrado" });
-    }
-  } else {
-    response.status(404).json({ message: "Concesionario no encontrado" });
-  }
-});
-
-// 10. Borrar un coche de un concesionario
-app.delete("/concesionarios/:id/coches/:cocheId", (request, response) => {
-  const id = parseInt(request.params.id);
-  const cocheId = parseInt(request.params.cocheId);
-  const concesionario = concesionarios.find((c) => c.id === id);
-  if (concesionario) {
-    const index = concesionario.coches.findIndex((c) => c.id === cocheId);
-    if (index !== -1) {
-      concesionario.coches.splice(index, 1);
-      response.status(204).json();
-    } else {
-      response.status(404).json({ message: "Coche no encontrado" });
-    }
-  } else {
-    response.status(404).json({ message: "Concesionario no encontrado" });
-  }
+  response.json({ message: "ok" });
 });
