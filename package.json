@@ -19,6 +19,7 @@
   "homepage": "https://github.com/JoseRamonValladaresGonzalez/UD4#readme",
   "dependencies": {
     "express": "^4.21.2",
+    "helmet": "^8.0.0",
     "mongodb": "^6.12.0"
   },
   "devDependencies": {

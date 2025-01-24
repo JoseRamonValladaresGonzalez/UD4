@@ -1,13 +1,17 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
 
-// Concretamente el framework express.
 const express = require("express");
+const helmet = require("helmet");  // Importamos helmet para agregar seguridad
 
 const { MongoClient, ObjectId, ServerApiVersion } = require('mongodb'); // Importar ObjectId
+
 // Inicializamos la aplicación
 const app = express();
 const uri = "mongodb+srv://jvalgon2207:PHELRS12@cluster0.on77w.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+
+// Usamos helmet para añadir seguridad
+app.use(helmet());  // Aplica automáticamente una serie de encabezados HTTP de seguridad
 
 // Indicamos que la aplicación puede recibir JSON (API Rest)
 app.use(express.json());
@@ -24,6 +28,7 @@ const client = new MongoClient(uri, {
   },
 });
 let db;
+
 // Arrancar aplicación
 app.listen(port, async () => {
   try {
