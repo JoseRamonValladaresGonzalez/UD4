@@ -1,21 +1,18 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
-
-// Concretamente el framework express.
+const swaggerUi = require("swagger-ui-express");
+const swaggerDocument = require("./swagger.json");
 const express = require("express");
 
-const { MongoClient, ObjectId, ServerApiVersion } = require('mongodb'); // Importar ObjectId
-// Inicializamos la aplicación
+const { MongoClient, ObjectId, ServerApiVersion } = require("mongodb"); // Importar ObjectId
 const app = express();
-const uri = "mongodb+srv://jvalgon2207:1gUHuKqKeMuAtpCp@cluster0.on77w.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const uri =
+  "mongodb+srv://jvalgon2207:PHELRS12@cluster0.on77w.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
-// Indicamos que la aplicación puede recibir JSON (API Rest)
 app.use(express.json());
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// Indicamos el puerto en el que vamos a desplegar la aplicación
 const port = process.env.PORT || 8080;
-
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -25,7 +22,6 @@ const client = new MongoClient(uri, {
 });
 let db;
 
-// Arrancamos la aplicación
 app.listen(port, async () => {
   try {
     await client.connect();
@@ -36,70 +32,101 @@ app.listen(port, async () => {
   }
 });
 
-// Lista todos los coches
-app.get("/coches", async (request, response) => {
+// Obtener todos los concesionarios
+app.get("/concesionarios", async (req, res) => {
   try {
-    const coches = await db.collection("coches").find({}).toArray();
-    response.json(coches);
+    const concesionarios = await db
+      .collection("concesionarios")
+      .find({})
+      .toArray();
+    res.json(concesionarios);
   } catch (err) {
-    response.status(500).json({ error: "Error al obtener los coches" });
+    res.status(500).json({ error: "Error al obtener los concesionarios" });
   }
 });
 
-// Añadir un nuevo coche
-app.post("/coches", async (request, response) => {
+// Crear concesionario
+app.post("/concesionarios", async (req, res) => {
   try {
-    await db.collection("coches").insertOne(request.body);
-    response.json({ message: "ok" });
+    await db.collection("concesionarios").insertOne(req.body);
+    res.json({ message: "ok" });
   } catch (err) {
-    response.status(500).json({ error: "Error al añadir el coche" });
+    res.status(500).json({ error: "Error al añadir el concesionario" });
   }
 });
 
-// Obtener un solo coche
-app.get("/coches/:id", async (request, response) => {
+// Obtener un concesionario por ID
+app.get("/concesionarios/:id", async (req, res) => {
   try {
-    const id = new ObjectId(request.params.id); // Usamos ObjectId para convertir la cadena a un id de MongoDB
-    const coche = await db.collection("coches").findOne({ _id: id }); // findOne es más eficiente cuando buscamos un solo documento
+    const id = new ObjectId(req.params.id);
+    const concesionario = await db
+      .collection("concesionarios")
+      .findOne({ _id: id });
+    if (!concesionario) {
+      return res.status(404).json({ error: "Concesionario no encontrado" });
+    }
+    res.json(concesionario);
+  } catch (err) {
+    res.status(500).json({ error: "Error al obtener el concesionario" });
+  }
+});
 
+// Obtener coches con filtros (por marca y/o modelo)
+app.get("/coches", async (req, res) => {
+  try {
+    const { marca, modelo } = req.query;
+    let filter = {};
+    if (marca) filter.marca = marca;
+    if (modelo) filter.modelo = modelo;
+    const coches = await db.collection("coches").find(filter).toArray();
+    res.json(coches);
+  } catch (err) {
+    res.status(500).json({ error: "Error al obtener los coches" });
+  }
+});
+
+// Crear coche
+app.post("/coches", async (req, res) => {
+  try {
+    await db.collection("coches").insertOne(req.body);
+    res.json({ message: "ok" });
+  } catch (err) {
+    res.status(500).json({ error: "Error al añadir el coche" });
+  }
+});
+
+// Obtener coche por ID
+app.get("/coches/:id", async (req, res) => {
+  try {
+    const id = new ObjectId(req.params.id);
+    const coche = await db.collection("coches").findOne({ _id: id });
     if (!coche) {
-      return response.status(404).json({ error: "Coche no encontrado" });
+      return res.status(404).json({ error: "Coche no encontrado" });
     }
-
-    response.json(coche);
+    res.json(coche);
   } catch (err) {
-    response.status(500).json({ error: "Error al obtener el coche" });
+    res.status(500).json({ error: "Error al obtener el coche" });
   }
 });
 
-// Actualizar un solo coche
-app.put("/coches/:id", async (request, response) => {
+// Actualizar coche por ID
+app.put("/coches/:id", async (req, res) => {
   try {
-    const id = new ObjectId(request.params.id);
-    const result = await db.collection("coches").updateOne({ _id: id }, { $set: request.body });
-
-    if (result.matchedCount === 0) {
-      return response.status(404).json({ error: "Coche no encontrado para actualizar" });
-    }
-
-    response.json({ message: "ok" });
+    const id = new ObjectId(req.params.id);
+    await db.collection("coches").updateOne({ _id: id }, { $set: req.body });
+    res.json({ message: "ok" });
   } catch (err) {
-    response.status(500).json({ error: "Error al actualizar el coche" });
+    res.status(500).json({ error: "Error al actualizar el coche" });
   }
 });
 
-// Borrar un coche
-app.delete("/coches/:id", async (request, response) => {
+// Eliminar coche por ID
+app.delete("/coches/:id", async (req, res) => {
   try {
-    const id = new ObjectId(request.params.id);
-    const result = await db.collection("coches").deleteOne({ _id: id });
-
-    if (result.deletedCount === 0) {
-      return response.status(404).json({ error: "Coche no encontrado para borrar" });
-    }
-
-    response.json({ message: "ok" });
+    const id = new ObjectId(req.params.id);
+    await db.collection("coches").deleteOne({ _id: id });
+    res.json({ message: "ok" });
   } catch (err) {
-    response.status(500).json({ error: "Error al borrar el coche" });
+    res.status(500).json({ error: "Error al eliminar el coche" });
   }
 });
